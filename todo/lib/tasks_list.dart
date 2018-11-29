@@ -1,7 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:todo/models/task.dart';
+import 'package:uuid/uuid.dart';
 
-class TaskList extends StatelessWidget {
+typedef void TextInputFieldCallback(String newText);
+
+class TaskListState extends State<TaskList> {
+  final List<Task> _tasks = new List();
+  String _enteredText = "";
+  void _onAddClicked() {
+    setState(() {
+      if (_enteredText.isNotEmpty) {
+        _tasks.add(Task(Uuid().v4(), _enteredText));
+        _enteredText = "";
+      }
+    });
+  }
+
+  void _onEnteredTextChanged(String newText) {
+    _enteredText = newText;
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Container(
@@ -9,16 +28,41 @@ class TaskList extends StatelessWidget {
         children: <Widget>[
           new Expanded(
             child: ListView.builder(
-              itemCount: 100,
-              itemBuilder: (BuildContext context, int index) => TaskItem("Task # $index"),
+              itemCount: _tasks.length,
+              itemBuilder: (BuildContext context, int index) =>
+                  TaskItem(_tasks[index].description),
             ),
           ),
-          new TaskInputField(),
+          new TaskInputField(
+              _enteredText, _onAddClicked, _onEnteredTextChanged),
         ],
       ),
     );
   }
 }
+
+class TaskList extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => TaskListState();
+}
+// class TaskList extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return new Container(
+//       child: new Column(
+//         children: <Widget>[
+//           new Expanded(
+//             child: ListView.builder(
+//               itemCount: 100,
+//               itemBuilder: (BuildContext context, int index) => TaskItem("Task # $index"),
+//             ),
+//           ),
+//           new TaskInputField(),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 class TaskItem extends StatelessWidget {
   final String _text;
@@ -44,24 +88,29 @@ class TaskItem extends StatelessWidget {
 }
 
 class TaskInputField extends StatelessWidget {
+  final String _text;
+  final VoidCallback _onAddClicked;
+  final TextInputFieldCallback _onTextChanged;
+
+  TaskInputField(this._text, this._onAddClicked, this._onTextChanged);
+
   @override
   Widget build(BuildContext context) {
     return new Row(
       children: <Widget>[
         new Expanded(
           child: Container(
-            padding: EdgeInsets.only(
-              left: 8.0,
-              top: 0.0,
-              bottom: 0.0,
-              right: 0.0 
+            padding:
+                EdgeInsets.only(left: 8.0, top: 0.0, bottom: 0.0, right: 0.0),
+            child: TextField(
+              controller: new TextEditingController(text: _text),
+              onChanged: this._onTextChanged,
             ),
-            child: TextField(),
           ),
         ),
         IconButton(
           icon: Icon(Icons.add),
-          onPressed: () {},
+          onPressed: _onAddClicked,
         )
       ],
     );
