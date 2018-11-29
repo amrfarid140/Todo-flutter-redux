@@ -21,7 +21,6 @@ class MyApp extends StatelessWidget {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         primarySwatch: Colors.red,
-        accentColor: Colors.white
       ),
       home: MyHomePage(title: 'Do them tasks'),
     );
