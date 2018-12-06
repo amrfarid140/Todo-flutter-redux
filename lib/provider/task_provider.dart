@@ -37,8 +37,7 @@ class TaskProvider {
     
   }
 
-  Future<Task> deleteTask(Task task) async {
-    await _db.delete(_tableName, where: 'id=?', whereArgs: [task.id]);
-    return task;
+  Future<void> deleteTask(String taskId) async {
+    await _db.delete(_tableName, where: 'id=?', whereArgs: [taskId]);
   }
 }

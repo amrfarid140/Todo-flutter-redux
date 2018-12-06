@@ -5,6 +5,7 @@ import 'package:todo/provider/task_provider.dart';
 import 'package:uuid/uuid.dart';
 
 typedef void TextInputFieldCallback(String newText);
+typedef void OnItemDismissedCallback(String itemId);
 
 class TaskListState extends State<TaskList> {
   final List<Task> _tasks = new List();
@@ -14,28 +15,24 @@ class TaskListState extends State<TaskList> {
   @override
   void initState() {
     super.initState();
-    _taskProvider.open().then((dbOpen) => _taskProvider.getAllTasks())
-    .then((exisitngItems) => 
-      setState(() {
-          _tasks.clear();
-          _tasks.addAll(exisitngItems);
-        })
-    );
-    
+    _taskProvider
+        .open()
+        .then((dbOpen) => _taskProvider.getAllTasks())
+        .then((exisitngItems) => setState(() {
+              _tasks.clear();
+              _tasks.addAll(exisitngItems);
+            }));
   }
 
   void _onAddClicked() {
     if (_enteredText.isNotEmpty) {
-      Task createdTask = Task(Uuid().v4(), _enteredText,new DateTime.now().millisecondsSinceEpoch);
-      _taskProvider.insertTask(createdTask).then(
-      (addedTask) => setState(() {
-        _tasks.add(addedTask);
-        _enteredText = "";
-      })
-    );
-    } else {
-      
-    }
+      Task createdTask = Task(
+          Uuid().v4(), _enteredText, new DateTime.now().millisecondsSinceEpoch);
+      _taskProvider.insertTask(createdTask).then((addedTask) => setState(() {
+            _tasks.add(addedTask);
+            _enteredText = "";
+          }));
+    } else {}
   }
 
   void _onEnteredTextChanged(String newText) {
@@ -51,7 +48,12 @@ class TaskListState extends State<TaskList> {
             child: ListView.builder(
               itemCount: _tasks.length,
               itemBuilder: (BuildContext context, int index) =>
-                  TaskItem(_tasks[index].description),
+                  TaskItem(_tasks[index].id, _tasks[index].description,
+                      (String itemId) async {
+                        await _taskProvider.deleteTask(itemId);
+                    Scaffold.of(context)
+                        .showSnackBar(SnackBar(content: Text("Task Deleted")));
+                  }),
             ),
           ),
           new TaskInputField(
@@ -68,22 +70,40 @@ class TaskList extends StatefulWidget {
 }
 
 class TaskItem extends StatelessWidget {
+  final String _id;
   final String _text;
-  TaskItem(this._text);
+  final OnItemDismissedCallback _dismissedCallback;
+  TaskItem(this._id, this._text, this._dismissedCallback);
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      child: Container(
-        padding: EdgeInsets.all(24.0),
-        child: new Row(
-          children: <Widget>[
-            Container(
-                padding: EdgeInsets.only(
-                    left: 0.0, right: 16.0, top: 0.0, bottom: 0.0),
-                child: Icon(Icons.check)),
-            Text(_text)
-          ],
+    return Dismissible(
+      key: Key(this._id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (DismissDirection direction) {
+        this._dismissedCallback(this._id);
+      },
+      background: Container(
+        padding: EdgeInsets.only(
+                      left: 0.0, right: 16.0, top: 0.0, bottom: 0.0),
+        child: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Icon(Icons.delete, color: Colors.white,),
+        ),
+        color: Colors.red,
+      ),
+      child: InkWell(
+        onTap: () {},
+        child: Container(
+          padding: EdgeInsets.all(24.0),
+          child: new Row(
+            children: <Widget>[
+              Container(
+                  padding: EdgeInsets.only(
+                      left: 0.0, right: 16.0, top: 0.0, bottom: 0.0),
+                  child: Icon(Icons.check)),
+              Text(_text)
+            ],
+          ),
         ),
       ),
     );
@@ -103,7 +123,7 @@ class TaskInputField extends StatelessWidget {
       children: <Widget>[
         new Expanded(
           child: Container(
-            margin: EdgeInsets.only(bottom: 8.0) ,
+            margin: EdgeInsets.only(bottom: 8.0),
             padding:
                 EdgeInsets.only(left: 8.0, top: 0.0, bottom: 8.0, right: 0.0),
             child: TextField(
