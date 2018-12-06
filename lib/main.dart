@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _activeTab;
   @override
     void initState() {
-      _tabs.add(TodoList().build(context));
+      _tabs.add(TodoList());
       _tabs.add(TaskList());
       _activeWidget = _tabs[0];
       _activeTab = 0;

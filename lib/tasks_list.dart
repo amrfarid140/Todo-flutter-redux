@@ -1,20 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:todo/models/task.dart';
+import 'package:todo/provider/task_provider.dart';
 import 'package:uuid/uuid.dart';
 
 typedef void TextInputFieldCallback(String newText);
 
 class TaskListState extends State<TaskList> {
   final List<Task> _tasks = new List();
+  final TaskProvider _taskProvider = new TaskProvider();
   String _enteredText = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _taskProvider.open().then((dbOpen) => _taskProvider.getAllTasks())
+    .then((exisitngItems) => 
+      setState(() {
+          _tasks.clear();
+          _tasks.addAll(exisitngItems);
+        })
+    );
+    
+  }
+
   void _onAddClicked() {
-    setState(() {
-      if (_enteredText.isNotEmpty) {
-        _tasks.add(Task(Uuid().v4(), _enteredText));
+    if (_enteredText.isNotEmpty) {
+      Task createdTask = Task(Uuid().v4(), _enteredText,new DateTime.now().millisecondsSinceEpoch);
+      _taskProvider.insertTask(createdTask).then(
+      (addedTask) => setState(() {
+        _tasks.add(addedTask);
         _enteredText = "";
-      }
-    });
+      })
+    );
+    } else {
+      
+    }
   }
 
   void _onEnteredTextChanged(String newText) {
@@ -45,24 +66,6 @@ class TaskList extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => TaskListState();
 }
-// class TaskList extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return new Container(
-//       child: new Column(
-//         children: <Widget>[
-//           new Expanded(
-//             child: ListView.builder(
-//               itemCount: 100,
-//               itemBuilder: (BuildContext context, int index) => TaskItem("Task # $index"),
-//             ),
-//           ),
-//           new TaskInputField(),
-//         ],
-//       ),
-//     );
-//   }
-// }
 
 class TaskItem extends StatelessWidget {
   final String _text;
@@ -100,8 +103,9 @@ class TaskInputField extends StatelessWidget {
       children: <Widget>[
         new Expanded(
           child: Container(
+            margin: EdgeInsets.only(bottom: 8.0) ,
             padding:
-                EdgeInsets.only(left: 8.0, top: 0.0, bottom: 0.0, right: 0.0),
+                EdgeInsets.only(left: 8.0, top: 0.0, bottom: 8.0, right: 0.0),
             child: TextField(
               controller: new TextEditingController(text: _text),
               onChanged: this._onTextChanged,
