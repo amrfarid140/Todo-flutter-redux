@@ -1,2 +1,8 @@
-# Todo-flutter-redux
-Flutter based To-do app using Redux architecture 
+# todo
+
+A Todo app with redux architecutre
+
+## Getting Started
+
+For help getting started with Flutter, view our online
+[documentation](https://flutter.io/).
