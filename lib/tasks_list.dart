@@ -44,20 +44,20 @@ class TaskListState extends State<TaskList> {
     return new Container(
       child: new Column(
         children: <Widget>[
+          new TaskInputField(
+              _enteredText, _onAddClicked, _onEnteredTextChanged),
           new Expanded(
             child: ListView.builder(
               itemCount: _tasks.length,
               itemBuilder: (BuildContext context, int index) =>
                   TaskItem(_tasks[index].id, _tasks[index].description,
                       (String itemId) async {
-                        await _taskProvider.deleteTask(itemId);
+                    await _taskProvider.deleteTask(itemId);
                     Scaffold.of(context)
                         .showSnackBar(SnackBar(content: Text("Task Deleted")));
                   }),
             ),
-          ),
-          new TaskInputField(
-              _enteredText, _onAddClicked, _onEnteredTextChanged),
+          )
         ],
       ),
     );
@@ -83,11 +83,13 @@ class TaskItem extends StatelessWidget {
         this._dismissedCallback(this._id);
       },
       background: Container(
-        padding: EdgeInsets.only(
-                      left: 0.0, right: 16.0, top: 0.0, bottom: 0.0),
+        padding: EdgeInsets.only(left: 0.0, right: 16.0, top: 0.0, bottom: 0.0),
         child: Align(
           alignment: AlignmentDirectional.centerEnd,
-          child: Icon(Icons.delete, color: Colors.white,),
+          child: Icon(
+            Icons.delete,
+            color: Colors.white,
+          ),
         ),
         color: Colors.red,
       ),
@@ -123,18 +125,21 @@ class TaskInputField extends StatelessWidget {
       children: <Widget>[
         new Expanded(
           child: Container(
-            margin: EdgeInsets.only(bottom: 8.0),
+            margin: EdgeInsets.only(bottom: 8.0, top: 8.0),
             padding:
                 EdgeInsets.only(left: 8.0, top: 0.0, bottom: 8.0, right: 0.0),
             child: TextField(
+              decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  hintText: 'Enter new task',
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.add),
+                    onPressed: _onAddClicked,
+                  )),
               controller: new TextEditingController(text: _text),
               onChanged: this._onTextChanged,
             ),
           ),
-        ),
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: _onAddClicked,
         )
       ],
     );
