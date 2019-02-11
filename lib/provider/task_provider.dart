@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
@@ -13,7 +15,7 @@ class TaskProvider {
   Future<void> open() async {
     Directory documentsDirectoty = await getApplicationDocumentsDirectory();
     _db = await openDatabase(join(documentsDirectoty.path, _databaseName),
-        version: 1, onCreate: _createDB);
+        version: 1, onCreate: _createDB, singleInstance: true);
   }
 
   Future<void> _createDB(Database db, int version) async {

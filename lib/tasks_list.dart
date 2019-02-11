@@ -1,72 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:todo/models/task.dart';
-import 'package:todo/provider/task_provider.dart';
-import 'package:uuid/uuid.dart';
+import 'package:todo/state/task_store/task_store.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 
 typedef void TextInputFieldCallback(String newText);
 typedef void OnItemDismissedCallback(String itemId);
 
-class TaskListState extends State<TaskList> {
-  final List<Task> _tasks = new List();
-  final TaskProvider _taskProvider = new TaskProvider();
-  String _enteredText = "";
+final store = TaskStore();
 
-  @override
-  void initState() {
-    super.initState();
-    _taskProvider
-        .open()
-        .then((dbOpen) => _taskProvider.getAllTasks())
-        .then((exisitngItems) => setState(() {
-              _tasks.clear();
-              _tasks.addAll(exisitngItems);
-            }));
-  }
-
-  void _onAddClicked() {
-    if (_enteredText.isNotEmpty) {
-      Task createdTask = Task(
-          Uuid().v4(), _enteredText, new DateTime.now().millisecondsSinceEpoch);
-      _taskProvider.insertTask(createdTask).then((addedTask) => setState(() {
-            _tasks.add(addedTask);
-            _enteredText = "";
-          }));
-    } else {}
-  }
-
-  void _onEnteredTextChanged(String newText) {
-    _enteredText = newText;
-  }
-
+class TaskList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new Container(
-      child: new Column(
-        children: <Widget>[
-          new TaskInputField(
-              _enteredText, _onAddClicked, _onEnteredTextChanged),
-          new Expanded(
-            child: ListView.builder(
-              itemCount: _tasks.length,
-              itemBuilder: (BuildContext context, int index) =>
-                  TaskItem(_tasks[index].id, _tasks[index].description,
-                      (String itemId) async {
-                    await _taskProvider.deleteTask(itemId);
-                    Scaffold.of(context)
-                        .showSnackBar(SnackBar(content: Text("Task Deleted")));
-                  }),
-            ),
-          )
-        ],
-      ),
+    return new FutureBuilder(
+      future: store.fetchTasks(),
+      builder: (BuildContext context, AsyncSnapshot<void> snap) {
+        return new Container(
+          child: new Column(
+            children: <Widget>[
+              Observer(
+                builder: (_) => new TaskInputField(
+                    store.enteredText, store.onAddClicked, store.onTextChanged),
+              ),
+              new Expanded(
+                child: Observer(
+                  builder: (_) => ListView.builder(
+                        itemCount: store.tasks.length,
+                        itemBuilder: (BuildContext context, int index) =>
+                            TaskItem(store.tasks[index].id,
+                                store.tasks[index].description,
+                                (String itemId) async {
+                              store.deleteItem(itemId);
+                              Scaffold.of(context).showSnackBar(
+                                  SnackBar(content: Text("Task Deleted")));
+                            }),
+                      ),
+                ),
+              )
+            ],
+          ),
+        );
+      },
     );
   }
-}
-
-class TaskList extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() => TaskListState();
 }
 
 class TaskItem extends StatelessWidget {
@@ -136,7 +111,11 @@ class TaskInputField extends StatelessWidget {
                     icon: Icon(Icons.add),
                     onPressed: _onAddClicked,
                   )),
-              controller: new TextEditingController(text: _text),
+              controller: new TextEditingController.fromValue(
+                  new TextEditingValue(
+                      text: _text,
+                      selection:
+                          new TextSelection.collapsed(offset: _text.length))),
               onChanged: this._onTextChanged,
             ),
           ),
